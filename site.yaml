@@ -1,0 +1,9 @@
+---
+    # This playbook deploys Portworx 
+    
+    - name: deploys Portworx on Openshift cluster
+      hosts: openshift-master
+      remote_user: centos
+    
+      roles:
+        - portworx

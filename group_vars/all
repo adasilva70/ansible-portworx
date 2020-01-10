@@ -1,0 +1,36 @@
+---
+
+# Parameters for Portworx installation
+
+portworxVersion: 2.2.0.5  
+
+# User "-b" for internal kvdb
+# or "-k etcd:http://<your-etcd-endpoint>:2379" for external kvdb
+etcdEndPoint: "-b"
+clusterName: "mycluster"   
+
+# Specify storage for Portworx
+# "-a" to auto discover available/unused drives
+# "-A" to auto discover available/unused drives and partitions
+# "-s /dev/sda;/dev/sdb" for specific drives to use
+drives: "-a" 
+
+# secret type
+secretType: "k8s"                      
+
+# Specify network interface or leave empty to use default
+# dataInterface should be in the format "-d ifname", where ifname is the interface name like eth0, eth1, etc
+# managementInterface should be in the format "-m ifname"
+# DO NOT USE
+dataInterface:                    
+managementInterface:            
+                         
+storkVersion: 2.3.1
+
+# DO NOT USE
+customRegistryURL:
+registrySecret:
+
+lighthouseVersion: 2.0.5
+lighthouseSyncVersion: 2.0.5
+lighthouseStorkConnectorVersion: 2.0.5

@@ -1,0 +1,21 @@
+---
+
+- name: Configure privileged security context
+  shell: |
+    oc adm policy add-scc-to-user privileged system:serviceaccount:kube-system:px-account
+    oc adm policy add-scc-to-user privileged system:serviceaccount:kube-system:portworx-pvc-controller-account
+    oc adm policy add-scc-to-user privileged system:serviceaccount:kube-system:px-lh-account
+    oc adm policy add-scc-to-user anyuid system:serviceaccount:kube-system:px-lh-account
+    oc adm policy add-scc-to-user anyuid system:serviceaccount:default:default
+  ignore_errors: true    
+
+- name: Copy px-install.yaml to openshift master
+  template: src=px-install.yaml.j2 dest=~/px-install.yaml
+
+- name: Apply px-install.yaml on master
+  shell: "oc apply -f ~/px-install.yaml"
+  ignore_errors: true
+
+- name: Wait for Portworx to become ready
+  shell: "oc wait --namespace=kube-system --for=condition=Ready pods --selector name=portworx --timeout=600s"
+  ignore_errors: true
