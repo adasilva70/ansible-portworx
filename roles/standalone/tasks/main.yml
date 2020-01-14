@@ -1,0 +1,39 @@
+---
+
+- set_fact:
+    docker_repo: "{{ registryURL if (customRegistry) else 'portworx' }}"
+
+- name: Install Portworx OCI bundle
+  shell: "sudo docker run --entrypoint /runc-entry-point.sh \
+  --rm -i --privileged=true \
+  -v /opt/pwx:/opt/pwx -v /etc/pwx:/etc/pwx \
+  {{ docker_repo }}/px-enterprise:{{ portworxVersion }}"   
+
+- name: Ensure etcdcerts directory exists
+  file: path=/etc/pwx/etcdcerts state=directory
+  become: true
+
+- name: Copy kvdb certs to each Portworx node
+  template: src=kvdb-ca.crt.j2 dest=/etc/pwx/etcdcerts/kvdb-ca.crt
+  become: true
+
+- name: Configure Portworx under runc
+  shell: "sudo /opt/pwx/bin/px-runc install -k {{ etcdEndPoint }} -ca /etc/pwx/etcdcerts/kvdb-ca.crt -c {{ clusterName }} {{ drives }}"
+
+- name: Reload systemd to re-read configs
+  systemd:
+    daemon_reload: yes
+  become: true
+
+- name: Enable service portworx 
+  systemd:
+    name: portworx
+    enabled: yes
+    masked: no
+  become: true  
+
+- name: Start portworx service
+  systemd:
+    state: started
+    name: portworx
+  become: true

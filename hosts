@@ -1,5 +1,7 @@
 [openshift-master]
-3.133.149.19
+70.0.48.166
 
-# [storage-nodes]
-# web2
+[storage-nodes]
+70.0.74.61
+70.0.74.63
+70.0.74.60

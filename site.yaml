@@ -1,9 +1,17 @@
 ---
     # This playbook deploys Portworx 
     
+    - name: deploys Portworx on Standalone cluster
+      hosts: storage-nodes
+      remote_user: root
+
+      roles:
+        - standalone 
+
+
     - name: deploys Portworx on Openshift cluster
       hosts: openshift-master
-      remote_user: centos
+      remote_user: root
     
       roles:
         - portworx

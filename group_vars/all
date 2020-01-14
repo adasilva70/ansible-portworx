@@ -2,21 +2,31 @@
 
 # Parameters for Portworx installation
 
-portworxVersion: 2.2.0.5  
+# Portworx version
+portworxVersion: 2.3.1.2  
 
-# User "-b" for internal kvdb
-# or "-k etcd:http://<your-etcd-endpoint>:2379" for external kvdb
-etcdEndPoint: "-b"
-clusterName: "mycluster"   
+# ETCD database endpoints - comma separated
+# "etcd:http://<your-etcd-endpoint1>:2379,etcd:http://<your-etcd-endpoint2>:2379,etcd:http://<your-etcd-endpoint3>:2379"
+etcdEndPoint: "etcd:https://ip-70-0-81-251.brbnca.spcsdns.net:2379,etcd:https://ip-70-0-81-253.brbnca.spcsdns.net:2379,etcd:https://ip-70-0-81-255.brbnca.spcsdns.net:2379"
+
+# PX cluster name - must be unique for PX cluster
+clusterName: "px-cluster-test1"   
 
 # Specify storage for Portworx
 # "-a" to auto discover available/unused drives
 # "-A" to auto discover available/unused drives and partitions
-# "-s /dev/sda;/dev/sdb" for specific drives to use
+# "-s /dev/sda, -s /dev/sdb" for specific drives to use (comma separated list)
 drives: "-a" 
 
 # secret type
-secretType: "k8s"                      
+secretType: "k8s"  
+
+# Local registry 
+customRegistry: false
+registrySecret: regcred
+registryURL: mysecure.registry.com:5000/portworx
+registryUser: john
+registryPassword: s3cret
 
 # Specify network interface or leave empty to use default
 # dataInterface should be in the format "-d ifname", where ifname is the interface name like eth0, eth1, etc
@@ -24,13 +34,33 @@ secretType: "k8s"
 # DO NOT USE
 dataInterface:                    
 managementInterface:            
-                         
+
+# Stork version                         
 storkVersion: 2.3.1
 
-# DO NOT USE
-customRegistryURL:
-registrySecret:
-
+# Lighthouse version
 lighthouseVersion: 2.0.5
 lighthouseSyncVersion: 2.0.5
 lighthouseStorkConnectorVersion: 2.0.5
+
+# ETCD CA certificate
+etcdCACert: |
+  -----BEGIN CERTIFICATE-----
+  MIIC/zCCAeegAwIBAgIJAI2jZzlZ8LnCMA0GCSqGSIb3DQEBCwUAMBYxFDASBgNV
+  BAMMC2V0Y2QtY2EtZG5zMB4XDTE5MDgwODIwNTY0N1oXDTQ2MTIyNDIwNTY0N1ow
+  FjEUMBIGA1UEAwwLZXRjZC1jYS1kbnMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+  ggEKAoIBAQC4xTK5IBwmcuKCLGRY+Tu5P5aMEqCUoGm9a6Jp0aS00WYAdnOemjp/
+  0P6KydllyZPf5lS6VXLGJXzTAegB+iYXpwn8vV2r2tV3UizJcf2nAr3ZDSxzM7I6
+  0rqnuVTckXqTYEfXkJ+brNJKBqUjWfSDjSMIdW4OClzlE3DsFFLW8OiY2cQFL+FY
+  sywa0AQNOabhE9K1gN5ePnn+dJry5o3nd8bQzFQLl0xO7AjtuLSRMEAWMGvNei1r
+  XFAzYWgP2tDey8JBJxgDL2G3kvZaz5LhmitVVnfiLewngR1uIoLSXYV5rJfFWH/c
+  6ytKzK9ZnaOTCDe+NGTfazyoZuN3Q4JnAgMBAAGjUDBOMB0GA1UdDgQWBBR0P55f
+  JslBv46bcgVKoP16VBdjIDAfBgNVHSMEGDAWgBR0P55fJslBv46bcgVKoP16VBdj
+  IDAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBijAKwACBzNPtP9r8u
+  Mig6S2F3j5w4Aw2CYL7SiF+QrGGVxoQc+sLHVYFdqh137p4aV4q+5BMTYbWhcdPx
+  jfS6j6fphxXomRGuugwjrF4ugUhlJ6efihxtmAN5EblJ/vSkn5VxlX4+ETKkYGkm
+  M3awW6R0yYmWexkwBygbUd+bVcPRGx5+OmQlD6oY2YL6ZpVFptuulSeD79E2H9i5
+  ixMMRFKr+wA+MancFfyhDGeKVJFZ3jEb1d5GHM7XtLpUqpROEOfOoa80lr1qyEnf
+  8aN5oIqI1oYPy5bGDpJDLFH+FUutn9gQGXCinXD6cuYOQ1HIjge5Fw6LYcDlC/6u
+  bFSU
+  -----END CERTIFICATE-----

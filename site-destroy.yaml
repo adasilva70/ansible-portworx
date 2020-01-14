@@ -1,0 +1,17 @@
+---
+    # This playbook removes Portworx
+    
+    - name: removes Portworx from Standalone cluster
+      hosts: storage-nodes
+      remote_user: root
+
+      roles:
+        - standalone-uninstall
+
+    # TO DO - remove PX from Openshift cluster
+    #- name: removes Portworx from Openshift cluster
+    #  hosts: openshift-master
+    #  remote_user: root
+    
+    #  roles:
+    #    - portworx-uninstall

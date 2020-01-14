@@ -1,0 +1,38 @@
+---
+
+- name: Stop portworx service
+  systemd:
+    state: stopped
+    name: portworx
+  become: true  
+
+- name: Disable service portworx 
+  systemd:
+    name: portworx
+    enabled: no
+  become: true  
+
+- name: Remove portworx service file
+  shell: "rm -f /etc/systemd/system/portworx*"
+  become: true
+
+# - CAUTION DATA LOSS this will wipe all 
+# Comment out if you want to preserve data
+- name: Wipe Portworx disks 
+  shell: "/opt/pwx/bin/pxctl sv nw --all"
+  become: true
+
+- name: umount OCI
+  shell: "umount /opt/pwx/oci"
+  become: true
+  ignore_errors: true
+
+- name: Remove Portworx binaries
+  shell: "rm -fr /opt/pwx"
+  become: true
+
+- name: Remove Portworx configuration files
+  shell: |
+    chattr -ie /etc/pwx/.private.json
+    rm -fr /etc/pwx
+  become: true

@@ -1,3 +1,15 @@
+#jinja2:lstrip_blocks: True 
+{% if customRegistry %}
+  {% set docker_repo = registryURL %}
+  {% set gcr_repo = registryURL %}
+  {% set openstorage_repo = registryURL %}
+  {% set google_repo = registryURL %}
+{% else %}
+  {% set docker_repo = "portworx" %}
+  {% set gcr_repo = "k8s.gcr.io" %}
+  {% set openstorage_repo = "openstorage" %}
+  {% set google_repo = "gcr.io/google_containers" %}
+{% endif %}
 ---
 kind: Service
 apiVersion: v1
@@ -9,7 +21,7 @@ metadata:
 spec:
   selector:
     name: portworx
-  type: NodePort
+  type: ClusterIP
   ports:
     - name: px-api
       protocol: TCP
@@ -49,6 +61,164 @@ spec:
     shortNames:
     - vps
     - vp
+  validation:
+    openAPIV3Schema:
+      type: object
+      required:
+      - spec
+      properties:
+        spec:
+          type: object
+          description: The desired spec of the volume placement strategy
+          properties:
+            replicaAffinity:
+              type: array
+              description: Allows you to specify a rule which creates an affinity for replicas within a volume
+              items:
+                type: object
+                properties:
+                  enforcement:
+                    type: string
+                    enum:
+                    - required
+                    - preferred
+                    description: Specifies if the given rule is required (hard) or preferred (soft)
+                  topologyKey:
+                    type: string
+                    minLength: 1
+                    description: Key for the node label that the system uses to denote a topology domain. The key can be for any node label that is present on the Kubernetes node.
+                  matchExpressions:
+                    description: Expression to use for the replica affinity rule
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          minLength: 1
+                        operator:
+                          type: string
+                          enum:
+                          - In
+                          - NotIn
+                          - Exists
+                          - DoesNotExist
+                          - Lt
+                          - Gt
+                          description: The logical operator to use for comparing the key and values in the match expression
+                        values:
+                          type: array
+                          items:
+                            type: string
+                      required:
+                      - key
+                      - operator
+            replicaAntiAffinity:
+              type: array
+              description: Allows you to specify a rule that creates an anti-affinity for replicas within a volume
+              items:
+                type: object
+                properties:
+                  enforcement:
+                    type: string
+                    enum:
+                    - required
+                    - preferred
+                    description: Specifies if the given rule is required (hard) or preferred (soft)
+                  topologyKey:
+                    type: string
+                    minLength: 1
+                    description: Key for the node label that the system uses to denote a topology domain. The key can be for any node label that is present on the Kubernetes node.
+                required:
+                - topologyKey
+            volumeAffinity:
+              type: array
+              description: Allows you to colocate volumes by specifying rules that place replicas of a volume together with those of another volume for which the specified labels match
+              items:
+                type: object
+                properties:
+                  enforcement:
+                    type: string
+                    enum:
+                    - required
+                    - preferred
+                    description: Specifies if the given rule is required (hard) or preferred (soft)
+                  topologyKey:
+                    type: string
+                    minLength: 1
+                    description: Key for the node label that the system uses to denote a topology domain. The key can be for any node label that is present on the Kubernetes node.
+                  matchExpressions:
+                    description: Expression to use for the volume affinity rule
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          minLength: 1
+                        operator:
+                          type: string
+                          enum:
+                          - In
+                          - NotIn
+                          - Exists
+                          - DoesNotExist
+                          - Lt
+                          - Gt
+                          description: The logical operator to use for comparing the key and values in the match expression
+                        values:
+                          type: array
+                          items:
+                            type: string
+                      required:
+                      - key
+                      - operator
+                required:
+                - matchExpressions
+            volumeAntiAffinity:
+              type: array
+              description: Allows you to specify dissociation rules between 2 or more volumes that match the given labels
+              items:
+                type: object
+                properties:
+                  enforcement:
+                    type: string
+                    enum:
+                    - required
+                    - preferred
+                    description: Specifies if the given rule is required (hard) or preferred (soft)
+                  topologyKey:
+                    type: string
+                    minLength: 1
+                    description: Key for the node label that the system uses to denote a topology domain. The key can be for any node label that is present on the Kubernetes node.
+                  matchExpressions:
+                    description: Expression to use for the volume anti affinity rule
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          minLength: 1
+                        operator:
+                          type: string
+                          enum:
+                          - In
+                          - NotIn
+                          - Exists
+                          - DoesNotExist
+                          - Lt
+                          - Gt
+                          description: The logical operator to use for comparing the key and values in the match expression
+                        values:
+                          type: array
+                          items:
+                            type: string
+                      required:
+                      - key
+                      - operator
+                required:
+                - matchExpressions
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -86,6 +256,10 @@ rules:
 - apiGroups: ["stork.libopenstorage.org"]
   resources: ["backuplocations"]
   verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create"]
+
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -137,7 +311,7 @@ metadata:
   labels:
     name: portworx
   annotations:
-    portworx.com/install-source: "https://install.portworx.com/?mc=false&kbver=1.11.0&k=etcd%3Ahttp%3A%2F%2F70.0.99.40%3A2379%2Cetcd%3Ahttp%3A%2F%2F70.0.99.41%3A2379%2Cetcd%3Ahttp%3A%2F%2F70.0.99.51%3A2379&j=auto&c=px-cluster-ae7fd952-908c-4892-96fd-fbccb1146b83&osft=true&stork=true&lh=true&st=k8s"
+    portworx.com/install-source: "https://install.portworx.com/?mc=false&kbver=1.11.0&b=true&ca=kvdb-ca.crt&cert=kvdb.crt&key=kvdb.key&c=px-cluster-43bd0571-8c39-467c-bf94-bb94e37fa5ae&osft=true&stork=true&lh=true&st=k8s"
 spec:
   selector:
     matchLabels:
@@ -169,10 +343,10 @@ spec:
       hostPID: false
       containers:
         - name: portworx
-          image: portworx/oci-monitor:{{ portworxVersion }}
+          image: {{ docker_repo }}/oci-monitor:{{ portworxVersion }}
           imagePullPolicy: Always
           args:
-            ["{{ etcdEndPoint }}", "-c", "{{ clusterName }}", "{{ drives }}", "-secret_type", "{{ secretType }}", "-x", "kubernetes"]
+            ["-k", "{{ etcdEndPoint }}", "-ca", "/etc/pwx/etcdcerts/kvdb-ca.crt", "-c", "{{ clusterName }}", "-z", "-secret_type", "{{ secretType }}", "-x", "kubernetes"]
           env:
             - name: "AUTO_NODE_RECOVERY_TIMEOUT_IN_SECS"
               value: "1500"
@@ -224,6 +398,8 @@ spec:
               readOnly: true
             - name: dbusmount
               mountPath: /var/run/dbus
+            - mountPath: /etc/pwx/etcdcerts
+              name: etcdcerts
       restartPolicy: Always
       serviceAccountName: px-account
       volumes:
@@ -267,6 +443,12 @@ spec:
         - name: dbusmount
           hostPath:
             path: /var/run/dbus
+        - name: etcdcerts
+          secret:
+            secretName: px-kvdb-auth
+            items:
+            - key: kvdb-ca.crt
+              path: kvdb-ca.crt
 ---
 kind: Service
 apiVersion: v1
@@ -278,7 +460,7 @@ metadata:
 spec:
   selector:
     name: portworx-api
-  type: NodePort
+  type: ClusterIP
   ports:
     - name: px-api
       protocol: TCP
@@ -331,7 +513,7 @@ spec:
       hostPID: false
       containers:
         - name: portworx-api
-          image: k8s.gcr.io/pause:3.1
+          image: {{ gcr_repo }}/pause:3.1
           imagePullPolicy: Always
           readinessProbe:
             periodSeconds: 10
@@ -441,7 +623,7 @@ spec:
         - --leader-elect=true
         - --health-monitor-interval=120
         imagePullPolicy: Always
-        image: openstorage/stork:{{ storkVersion }}
+        image: {{ openstorage_repo }}/stork:{{ storkVersion }}
         env:
         - name: "PX_SERVICE_NAME"
           value: "portworx-api"
@@ -484,8 +666,8 @@ rules:
     verbs: ["get", "create", "update"]
   - apiGroups: [""]
     resources: ["configmaps"]
-    verbs: ["get"]
-  - apiGroups: [""]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["", "events.k8s.io"]
     resources: ["events"]
     verbs: ["create", "patch", "update"]
   - apiGroups: [""]
@@ -522,6 +704,9 @@ rules:
   - apiGroups: ["storage.k8s.io"]
     resources: ["storageclasses", "csinodes"]
     verbs: ["get", "list", "watch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "update", "get", "list", "watch"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -567,7 +752,7 @@ spec:
         - --policy-configmap=stork-config
         - --policy-configmap-namespace=kube-system
         - --lock-object-name=stork-scheduler
-        image: gcr.io/google_containers/kube-scheduler-amd64:v1.11.0
+        image: {{ google_repo }}/kube-scheduler-amd64:v1.11.0
         livenessProbe:
           httpGet:
             path: /healthz
@@ -690,7 +875,7 @@ spec:
         - --controllers=persistentvolume-binder,persistentvolume-expander
         - --use-service-account-credentials=true
         - --leader-elect-resource-lock=endpoints
-        image: gcr.io/google_containers/kube-controller-manager-amd64:v1.11.0
+        image: {{ google_repo }}/kube-controller-manager-amd64:v1.11.0
         livenessProbe:
           failureThreshold: 8
           httpGet:
@@ -819,7 +1004,7 @@ spec:
     spec:
       initContainers:
       - name: config-init
-        image: portworx/lh-config-sync:{{ lighthouseSyncVersion }}
+        image: {{ docker_repo }}/lh-config-sync:{{ lighthouseSyncVersion }}
         imagePullPolicy: Always
         args:
         - "init"
@@ -828,7 +1013,7 @@ spec:
           mountPath: /config/lh
       containers:
       - name: px-lighthouse
-        image: portworx/px-lighthouse:{{ lighthouseVersion }}
+        image: {{ docker_repo }}/px-lighthouse:{{ lighthouseVersion }}
         imagePullPolicy: Always
         args: [ "-kubernetes", "true" ]
         ports:
@@ -838,7 +1023,7 @@ spec:
         - name: config
           mountPath: /config/lh
       - name: config-sync
-        image: portworx/lh-config-sync:{{ lighthouseSyncVersion }}
+        image: {{ docker_repo }}/lh-config-sync:{{ lighthouseSyncVersion }}
         imagePullPolicy: Always
         args:
         - "sync"
@@ -846,7 +1031,7 @@ spec:
         - name: config
           mountPath: /config/lh
       - name: stork-connector
-        image: portworx/lh-stork-connector:{{ lighthouseStorkConnectorVersion }}
+        image: {{ docker_repo }}/lh-stork-connector:{{ lighthouseStorkConnectorVersion }}
         imagePullPolicy: Always
       serviceAccountName: px-lh-account
       volumes:
